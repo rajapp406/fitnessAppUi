@@ -40,8 +40,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Check for existing user session
     const savedUser = localStorage.getItem('user');
-    if (savedUser) {
+    const accessToken = localStorage.getItem('accessToken');
+    
+    if (savedUser && accessToken) {
       setUser(JSON.parse(savedUser));
+    } else if (savedUser) {
+      // If there's a user but no token, clear the user
+      localStorage.removeItem('user');
     }
   }, []);
 
@@ -77,7 +82,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     setUser(null);
+    // Clear all auth-related data
     localStorage.removeItem('user');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
   };
 
   const updateProfile = (profile: Partial<User['profile']>) => {

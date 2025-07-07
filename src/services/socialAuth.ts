@@ -1,3 +1,5 @@
+import ApiService from "./apiService";
+
 // Social authentication service
 export interface SocialAuthProvider {
   name: string;
@@ -77,10 +79,11 @@ export class GoogleAuthService implements SocialAuthProvider {
         try {
           window.google.accounts.id.initialize({
             client_id: clientId,
-            callback: (response: any) => {
+            callback: async (response: any) => {
               try {
                 console.log('Google login response:', response);
                 // Decode JWT token
+                
                 const payload = JSON.parse(atob(response.credential.split('.')[1]));
                 
                 const result: SocialAuthResult = {
@@ -93,7 +96,8 @@ export class GoogleAuthService implements SocialAuthProvider {
                   token: response.credential,
                   provider: 'google',
                 };
-                
+                const resp = await ApiService.googleAuth(response.credential);
+                console.log(resp);
                 resolve(result);
               } catch (error) {
                 reject(new Error('Failed to process Google login response'));
