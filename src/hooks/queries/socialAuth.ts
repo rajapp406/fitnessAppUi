@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useAppDispatch } from '../redux';
 import { loginStart, loginSuccess, loginFailure } from '../../store/slices/authSlice';
 import { socialAuthManager, SocialAuthResult } from '../../services/socialAuth';
+import tokenStore from '../../lib/tokenStore';
 
 export const useSocialLogin = () => {
   const dispatch = useAppDispatch();
@@ -20,7 +21,7 @@ export const useSocialLogin = () => {
       };
 
       dispatch(loginSuccess(user));
-      localStorage.setItem('token', data.token);
+      tokenStore.setAccessToken(data.token);
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('authProvider', data.provider);
     },

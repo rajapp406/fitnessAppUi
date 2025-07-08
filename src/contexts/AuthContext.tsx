@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import tokenStore, { localStorageTokenStorage } from '../lib/tokenStore';
+import ApiService from '../services/apiService';
 
 interface User {
   id: string;
@@ -6,19 +8,19 @@ interface User {
   name: string;
   hasCompletedOnboarding: boolean;
   profile?: {
-    age: number;
-    gender: string;
-    fitnessLevel: string;
-    goals: string[];
-    workoutFrequency: string;
-    preferredWorkouts: string[];
+    age?: number;
+    gender?: string;
+    fitnessLevel?: string;
+    goals?: string[];
+    workoutFrequency?: string;
+    preferredWorkouts?: string[];
   };
 }
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  register: (email: string, name: string, password: string) => Promise<void>;
   logout: () => void;
   updateProfile: (profile: Partial<User['profile']>) => void;
   completeOnboarding: () => void;
@@ -37,55 +39,107 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
 
+  // Choose your storage strategy here:
+  // memoryTokenStorage, localStorageTokenStorage, or sessionStorageTokenStorage
+  // For demo, let's use localStorageTokenStorage for persistence
+  tokenStore.setStrategy(localStorageTokenStorage);
+
   useEffect(() => {
     // Check for existing user session
     const savedUser = localStorage.getItem('user');
-    const accessToken = localStorage.getItem('accessToken');
-    
-    if (savedUser && accessToken) {
+    // Restore tokens from persistent storage if using localStorage/sessionStorage
+    const accessToken = tokenStore.getAccessToken();
+    const refreshToken = tokenStore.getRefreshToken();
+    if (!accessToken && localStorageTokenStorage.getAccessToken()) {
+      tokenStore.setAccessToken(localStorageTokenStorage.getAccessToken());
+    }
+    if (!refreshToken && localStorageTokenStorage.getRefreshToken()) {
+      tokenStore.setRefreshToken(localStorageTokenStorage.getRefreshToken());
+    }
+    if (savedUser) {
       setUser(JSON.parse(savedUser));
-    } else if (savedUser) {
-      // If there's a user but no token, clear the user
-      localStorage.removeItem('user');
+      // If access token is missing, try to refresh it
+      if (!tokenStore.getAccessToken()) {
+        (async () => {
+          try {
+            // Attempt to refresh the access token (assumes httpOnly cookie is sent automatically)
+            const response = await ApiService.refreshTokenNoArgs();
+            if (response.success && response.data) {
+              const { accessToken, refreshToken } = response.data;
+              tokenStore.setAccessToken(accessToken);
+              tokenStore.setRefreshToken(refreshToken);
+            } else {
+              // Refresh failed, clear user and tokens
+              setUser(null);
+              localStorage.removeItem('user');
+              tokenStore.clear();
+              window.location.href = '/login';
+            }
+          } catch {
+            setUser(null);
+            localStorage.removeItem('user');
+            tokenStore.clear();
+            window.location.href = '/login';
+          }
+        })();
+      }
     }
   }, []);
 
   const login = async (email: string, password: string) => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const mockUser: User = {
-      id: '1',
-      email,
-      name: email.split('@')[0],
-      hasCompletedOnboarding: false,
-    };
-    
-    setUser(mockUser);
-    localStorage.setItem('user', JSON.stringify(mockUser));
+    // Call the real /auth/login endpoint
+    const response = await ApiService.login({ email, password });
+    if (response.success && response.data) {
+
+      const { user: loggedInUser, accessToken, refreshToken } = response.data.data;
+      console.log(response.data, 'response.data')
+      console.log(accessToken, refreshToken, 'tokens')
+      // Map backend IUser to local User type
+      const localUser = {
+        id: loggedInUser.id,
+        email: loggedInUser.email,
+        name: [loggedInUser.firstName, loggedInUser.lastName].filter(Boolean).join(' '),
+        hasCompletedOnboarding: false,
+      };
+      setUser(localUser);
+      localStorage.setItem('user', JSON.stringify(localUser));
+      tokenStore.setAccessToken(accessToken);
+      tokenStore.setRefreshToken(refreshToken);
+    } else {
+      throw new Error(response.error?.message || 'Login failed');
+    }
   };
 
-  const register = async (email: string, password: string, name: string) => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const mockUser: User = {
-      id: '1',
-      email,
-      name,
-      hasCompletedOnboarding: false,
-    };
-    
-    setUser(mockUser);
-    localStorage.setItem('user', JSON.stringify(mockUser));
+  const register = async (email: string, name: string, password: string) => {
+    // Split name into firstName and lastName for backend
+    const [firstName, ...lastNameArr] = name.split(' ');
+    const lastName = lastNameArr.join(' ');
+    // Call the real /auth/register endpoint
+    const response = await ApiService.register({ email, password, firstName, lastName });
+    if (response.success && response.data) {
+      console.log(response.data, 'response.data')
+      const { user: registeredUser, accessToken, refreshToken } = response.data.data;
+      // Map backend IUser to local User type
+      const localUser = {
+        id: registeredUser.id,
+        email: registeredUser.email,
+        name: [registeredUser.firstName, registeredUser.lastName].filter(Boolean).join(' '),
+        hasCompletedOnboarding: false,
+      };
+      setUser(localUser);
+      localStorage.setItem('user', JSON.stringify(localUser));
+      tokenStore.setAccessToken(accessToken);
+      tokenStore.setRefreshToken(refreshToken);
+    } else {
+      throw new Error(response.error?.message || 'Registration failed');
+    }
   };
 
   const logout = () => {
     setUser(null);
     // Clear all auth-related data
     localStorage.removeItem('user');
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    tokenStore.clear();
   };
 
   const updateProfile = (profile: Partial<User['profile']>) => {

@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { IApiError } from '../models/userModel';
+import tokenStore from './tokenStore';
 
 // Create a custom type for our API response format
 type ApiResponse<T> = {
@@ -25,7 +26,7 @@ export class ApiError extends Error {
 
 // Create axios instance with default config
 const apiClient: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3101/api/v2',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4001/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -36,8 +37,8 @@ const apiClient: AxiosInstance = axios.create({
 // Request interceptor for API calls
 apiClient.interceptors.request.use(
   async (config) => {
-    // Get token from localStorage or your auth service
-    const token = localStorage.getItem('accessToken');
+    // Get token from in-memory token store
+    const token = tokenStore.getAccessToken();
     
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -54,19 +55,19 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
     // Handle successful responses (status code 2xx)
-    return response.data;
+    return response;
   },
   async (error: AxiosError) => {
     // Handle errors (status code 4xx/5xx)
-    const originalRequest = error.config as any;
+    const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
     
     // If the error is 401 and we haven't tried to refresh the token yet
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       
       try {
-        // Try to refresh the token
-        const refreshToken = localStorage.getItem('refreshToken');
+        // Try to refresh the token using in-memory refresh token
+        const refreshToken = tokenStore.getRefreshToken();
         if (refreshToken) {
           const response = await axios.post<ApiResponse<{ accessToken: string; refreshToken: string }>>(
             `${originalRequest.baseURL}/auth/refresh-token`,
@@ -76,12 +77,14 @@ apiClient.interceptors.response.use(
           const { accessToken, refreshToken: newRefreshToken } = response.data.data || {};
           
           if (accessToken && newRefreshToken) {
-            // Store the new tokens
-            localStorage.setItem('accessToken', accessToken);
-            localStorage.setItem('refreshToken', newRefreshToken);
+            // Store the new tokens in memory
+            tokenStore.setAccessToken(accessToken);
+            tokenStore.setRefreshToken(newRefreshToken);
             
             // Update the Authorization header
-            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+            if (originalRequest.headers) {
+              (originalRequest.headers as Record<string, string>)["Authorization"] = `Bearer ${accessToken}`;
+            }
             
             // Retry the original request
             return apiClient(originalRequest);
@@ -89,8 +92,7 @@ apiClient.interceptors.response.use(
         }
       } catch (refreshError) {
         // If refresh token fails, clear auth and redirect to login
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        tokenStore.clear();
         localStorage.removeItem('user');
         
         // Redirect to login page
@@ -106,9 +108,11 @@ apiClient.interceptors.response.use(
     const apiError: ApiError = new ApiError(
       {
         status: 'error',
-        message: error.response?.data?.message || error.message || 'An error occurred',
-        code: error.response?.data?.code || error.code,
-        details: error.response?.data?.details || error.response?.data,
+        message: (error.response?.data as unknown as { message?: string })?.message || error.message || 'An error occurred',
+        code: (error.response?.data as unknown as { code?: string })?.code || error.code,
+        details: typeof (error.response?.data as unknown as { details?: unknown })?.details === 'object'
+          ? (error.response?.data as unknown as { details?: Record<string, unknown> })?.details
+          : undefined,
       },
       error.response?.status || 500
     );
@@ -133,13 +137,12 @@ export const apiRequest = async <T>(
         success: false,
         error: {
           status: 'error',
-          message: error.response.data?.message || error.message,
-          code: error.response.data?.code,
-          details: error.response.data?.details,
+          message: (error.response.data as unknown as { message?: string })?.message || error.message,
+          code: (error.response.data as unknown as { code?: string })?.code,
+          details: (error.response.data as unknown as { details?: Record<string, unknown> })?.details,
         },
       };
     }
-    
     return {
       success: false,
       error: {

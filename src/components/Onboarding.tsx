@@ -4,16 +4,26 @@ import { useAuth } from '../contexts/AuthContext';
 import ApiService from '../services/apiService';
 import { ChevronLeft, ChevronRight, User, Target, Activity, Calendar, Check } from 'lucide-react';
 
+// ProfileData type for onboarding
+export type ProfileData = {
+  age: number;
+  gender: string;
+  fitnessLevel: string;
+  goals: string[];
+  workoutFrequency: string;
+  preferredWorkouts: string[];
+};
+
 const Onboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    age: '',
+  const [formData, setFormData] = useState<ProfileData>({
+    age: 0,
     gender: '',
     fitnessLevel: '',
-    goals: [] as string[],
+    goals: [],
     workoutFrequency: '',
-    preferredWorkouts: [] as string[]
+    preferredWorkouts: []
   });
   
   const { updateProfile, completeOnboarding } = useAuth();
@@ -49,6 +59,7 @@ const Onboarding = () => {
       try {
         setIsSubmitting(true);
         // Update local state first for immediate feedback
+        console.log(formData, 'formData', JSON.stringify(formData))
         updateProfile(formData);
         
         // Send data to the backend
@@ -172,7 +183,12 @@ const Onboarding = () => {
 };
 
 // Step Components
-function PersonalInfo({ formData, setFormData }: any) {
+type StepProps = {
+  formData: ProfileData;
+  setFormData: React.Dispatch<React.SetStateAction<ProfileData>>;
+};
+
+function PersonalInfo({ formData, setFormData }: StepProps) {
   return (
     <div className="space-y-6">
       <div>
@@ -182,7 +198,7 @@ function PersonalInfo({ formData, setFormData }: any) {
         <input
           type="number"
           value={formData.age}
-          onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+          onChange={(e) => setFormData({ ...formData, age: Number(e.target.value) })}
           className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
           placeholder="Enter your age"
         />
@@ -213,7 +229,7 @@ function PersonalInfo({ formData, setFormData }: any) {
   );
 }
 
-function FitnessGoals({ formData, setFormData }: any) {
+function FitnessGoals({ formData, setFormData }: StepProps) {
   const goals = [
     'Lose Weight',
     'Build Muscle',
@@ -255,7 +271,7 @@ function FitnessGoals({ formData, setFormData }: any) {
   );
 }
 
-function FitnessLevel({ formData, setFormData }: any) {
+function FitnessLevel({ formData, setFormData }: StepProps) {
   const levels = [
     {
       level: 'Beginner',
@@ -297,7 +313,7 @@ function FitnessLevel({ formData, setFormData }: any) {
   );
 }
 
-function WorkoutPreferences({ formData, setFormData }: any) {
+function WorkoutPreferences({ formData, setFormData }: StepProps) {
   const frequencies = [
     '1-2 times per week',
     '3-4 times per week',

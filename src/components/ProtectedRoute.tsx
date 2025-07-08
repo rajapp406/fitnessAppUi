@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import tokenStore from '../lib/tokenStore';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -14,7 +15,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   useEffect(() => {
     // Simple check for access token
     const checkAuth = () => {
-      const token = localStorage.getItem('accessToken');
+      const token = tokenStore.getAccessToken();
       if (!token && user) {
         // If there's no token but user state exists, clear it
         localStorage.removeItem('user');

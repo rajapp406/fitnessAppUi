@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { useRegister } from '../hooks/queries/auth';
-import { useAppSelector } from '../hooks/redux';
+import { useAuth } from '../contexts/AuthContext';
 import { Dumbbell, Eye, EyeOff, Mail, Lock, User, ArrowLeft } from 'lucide-react';
 import SocialLogin from './SocialLogin';
 
@@ -13,10 +12,10 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   
   const navigate = useNavigate();
-  const registerMutation = useRegister();
-  const { isLoading, error } = useAppSelector((state) => state.auth);
+  const { register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,14 +32,21 @@ const Register = () => {
     }
 
     try {
-      await registerMutation.mutateAsync({ email, password, name });
+      setIsLoading(true);
+      await register(email, name, password);
       navigate('/app/onboarding');
-    } catch (err) {
-      // Error is handled by the mutation
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'message' in err) {
+        setValidationError((err as { message?: string }).message || 'Registration failed');
+      } else {
+        setValidationError('Registration failed');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const displayError = validationError || error;
+  const displayError = validationError;
 
   return (
     <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">

@@ -1,11 +1,15 @@
 import { AxiosRequestConfig } from 'axios';
-import apiClient, { ApiError, apiRequest } from '../lib/axios';
-import { IUser, IAuthTokens, ILoginRequest, IRegisterRequest, IRefreshTokenRequest } from '../models/userModel';
+import { apiRequest } from '../lib/axios';
+import { IUser, IAuthTokens, ILoginRequest, IRegisterRequest } from '../models/userModel';
+import tokenStore from '../lib/tokenStore';
 
 // Define API response types
 export interface AuthResponse {
-  user: IUser;
-  tokens: IAuthTokens;
+  data: {
+    user: IUser;
+    accessToken: string;
+    refreshToken: string;
+  };
 }
 
 class ApiService {
@@ -42,6 +46,13 @@ class ApiService {
     });
   }
 
+  static async refreshTokenNoArgs() {
+    return apiRequest<{ accessToken: string; refreshToken: string }>({
+      method: 'POST',
+      url: '/auth/refresh-token',
+    });
+  }
+
   static async updateProfile(profileData: any) {
     return apiRequest<{ user: IUser }>({
       method: 'PATCH',
@@ -51,7 +62,7 @@ class ApiService {
   }
 
   static async logout() {
-    const refreshToken = localStorage.getItem('refreshToken');
+    const refreshToken = tokenStore.getRefreshToken();
     if (refreshToken) {
       await apiRequest({
         method: 'POST',
@@ -78,7 +89,7 @@ class ApiService {
   }
 
   // Generic request method for other API calls
-  static async request<T>(config: AxiosRequestConfig) {
+  static async request<T>(config: AxiosRequestConfig<any>) {
     return apiRequest<T>(config);
   }
 }

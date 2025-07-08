@@ -1,5 +1,5 @@
 // API base configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3101/api/v2';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api/v1';
 
 export interface LoginRequest {
   email: string;

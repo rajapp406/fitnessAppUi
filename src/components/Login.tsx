@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { useLogin } from '../hooks/queries/auth';
-import { useAppSelector } from '../hooks/redux';
+import { useAuth } from '../contexts/AuthContext';
 import { Dumbbell, Eye, EyeOff, Mail, Lock, ArrowLeft } from 'lucide-react';
 import SocialLogin from './SocialLogin';
 
@@ -11,17 +10,25 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   
   const navigate = useNavigate();
-  const loginMutation = useLogin();
-  const { isLoading, error } = useAppSelector((state) => state.auth);
+  const { login } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setError(null);
+    setIsLoading(true);
     try {
-      await loginMutation.mutateAsync({ email, password });
+      await login(email, password);
       navigate('/app/onboarding');
-    } catch (err) {
-      // Error is handled by the mutation
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'message' in err) {
+        setError((err as { message?: string }).message || 'Login failed');
+      } else {
+        setError('Login failed');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 

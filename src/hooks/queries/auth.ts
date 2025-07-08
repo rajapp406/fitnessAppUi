@@ -1,12 +1,12 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useAppDispatch } from '../redux';
 import { loginStart, loginSuccess, loginFailure, logout } from '../../store/slices/authSlice';
 import { resetUserState } from '../../store/slices/userSlice';
-import { authApi, LoginRequest, RegisterRequest } from '../../services/api';
+import { authApi } from '../../services/api';
+import tokenStore from '../../lib/tokenStore';
 
 export const useLogin = () => {
   const dispatch = useAppDispatch();
-  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: authApi.login,
@@ -15,7 +15,7 @@ export const useLogin = () => {
     },
     onSuccess: (data) => {
       dispatch(loginSuccess(data.user));
-      localStorage.setItem('token', data.token);
+      tokenStore.setAccessToken(data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
     },
     onError: (error: Error) => {
@@ -34,7 +34,7 @@ export const useRegister = () => {
     },
     onSuccess: (data) => {
       dispatch(loginSuccess(data.user));
-      localStorage.setItem('token', data.token);
+      tokenStore.setAccessToken(data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
     },
     onError: (error: Error) => {
@@ -45,18 +45,16 @@ export const useRegister = () => {
 
 export const useLogout = () => {
   const dispatch = useAppDispatch();
-  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
       // Clear local storage
-      localStorage.removeItem('token');
+      tokenStore.setAccessToken(null);
       localStorage.removeItem('user');
     },
     onSuccess: () => {
       dispatch(logout());
       dispatch(resetUserState());
-      queryClient.clear();
     },
   });
 };
