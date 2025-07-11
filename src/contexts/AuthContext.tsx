@@ -91,14 +91,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const response = await ApiService.login({ email, password });
     if (response.success && response.data) {
 
-      const { user: loggedInUser, accessToken, refreshToken } = response.data.data;
+      const { id, accessToken, refreshToken, firstName, lastName } = response.data as any;
       console.log(response.data, 'response.data')
       console.log(accessToken, refreshToken, 'tokens')
       // Map backend IUser to local User type
       const localUser = {
-        id: loggedInUser.id,
-        email: loggedInUser.email,
-        name: [loggedInUser.firstName, loggedInUser.lastName].filter(Boolean).join(' '),
+        id,
+        email,
+        name: [firstName, lastName].filter(Boolean).join(' '),
         hasCompletedOnboarding: false,
       };
       setUser(localUser);
@@ -118,12 +118,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const response = await ApiService.register({ email, password, firstName, lastName });
     if (response.success && response.data) {
       console.log(response.data, 'response.data')
-      const { user: registeredUser, accessToken, refreshToken } = response.data.data;
+      const { id, accessToken, refreshToken, firstName, lastName } = response.data as any;
       // Map backend IUser to local User type
       const localUser = {
-        id: registeredUser.id,
-        email: registeredUser.email,
-        name: [registeredUser.firstName, registeredUser.lastName].filter(Boolean).join(' '),
+        id,
+        email,
+        name: [firstName, lastName].filter(Boolean).join(' '),
         hasCompletedOnboarding: false,
       };
       setUser(localUser);

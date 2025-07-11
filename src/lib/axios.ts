@@ -74,7 +74,8 @@ apiClient.interceptors.response.use(
             { refreshToken }
           );
           
-          const { accessToken, refreshToken: newRefreshToken } = response.data.data || {};
+          const { data } = response.data || {};
+          const { accessToken, refreshToken: newRefreshToken } = data || {};
           
           if (accessToken && newRefreshToken) {
             // Store the new tokens in memory
