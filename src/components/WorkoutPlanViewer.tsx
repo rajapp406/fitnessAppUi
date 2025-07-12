@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import {
   Card, CardContent, Typography, Box, Chip,
   Accordion, AccordionSummary, AccordionDetails, List, ListItem, ListItemText,
-  ListItemIcon, useTheme, useMediaQuery
+  ListItemIcon, useTheme, useMediaQuery, IconButton
 } from '@mui/material';
+import CloseIcon from '@mui/icons-material/Close';
 import {
   ExpandMore as ExpandMoreIcon,
   FitnessCenter as ExerciseIcon,
@@ -40,6 +41,7 @@ interface WorkoutPlan {
 
 interface Props {
   plan: WorkoutPlan;
+  onClose?: () => void;
 }
 
 const SectionTitle: React.FC<{ title: string; icon: React.ReactNode }> = ({ title, icon }) => (
@@ -51,7 +53,7 @@ const SectionTitle: React.FC<{ title: string; icon: React.ReactNode }> = ({ titl
   </Box>
 );
 
-const WorkoutPlanViewer: React.FC<Props> = ({ plan }) => {
+const WorkoutPlanViewer: React.FC<Props> = ({ plan, onClose }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [expanded, setExpanded] = useState<string | false>(false);
@@ -153,7 +155,24 @@ const WorkoutPlanViewer: React.FC<Props> = ({ plan }) => {
   );
 
   return (
-    <Box maxWidth={700} mx="auto" my={2} px={isMobile ? 1 : 4}>
+    <Box maxWidth={700} mx="auto" my={2} px={isMobile ? 1 : 4} position="relative">
+      {onClose && (
+        <IconButton 
+          onClick={onClose}
+          sx={{
+            position: 'absolute',
+            right: 16,
+            top: 16,
+            zIndex: 1,
+            backgroundColor: 'background.paper',
+            '&:hover': {
+              backgroundColor: 'action.hover'
+            }
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+      )}
       <Card elevation={0} sx={{ borderRadius: 3, overflow: 'hidden' }}>
         <Box sx={{ 
           background: 'linear-gradient(135deg, #3f51b5 0%, #1a237e 100%)',

@@ -1,13 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Dumbbell, Target, Trophy, Calendar, TrendingUp, User, Settings, Play, Clock, Siren as Fire, Award } from 'lucide-react';
-import WorkoutPlanViewer from './WorkoutPlanViewer';
+import { Dumbbell, Clock, Award, Flame, Play, Target, Calendar } from 'lucide-react';
+import WorkoutPlanViewer from './workout/WorkoutPlanViewer';
 import workoutPlanMock from './WorkoutPlanMock';
+import AppHeader from './dashboard/AppHeader';
+import WelcomeSection from './dashboard/WelcomeSection';
+import StatsSection from './dashboard/StatsSection';
+import WorkoutSection from './dashboard/WorkoutSection';
+import type { StatItem, Workout } from '../types';
 
-const Dashboard = () => {
+const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
+  const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
 
-  const stats = [
+  const stats: StatItem[] = [
     {
       title: 'Workouts This Week',
       value: '4',
@@ -18,7 +24,7 @@ const Dashboard = () => {
     {
       title: 'Calories Burned',
       value: '1,240',
-      icon: Fire,
+      icon: Flame,
       color: 'from-orange-600 to-orange-700',
       bgColor: 'from-orange-50 to-orange-100'
     },
@@ -38,7 +44,7 @@ const Dashboard = () => {
     }
   ];
 
-  const workouts = [
+  const workouts: Workout[] = [
     {
       title: 'Morning Cardio',
       duration: '30 min',
@@ -62,51 +68,57 @@ const Dashboard = () => {
     }
   ];
 
+  const handleWorkoutClick = (workout: Workout) => {
+    setSelectedWorkout(workout);
+  };
+
+  const handleCloseWorkoutViewer = () => {
+    setSelectedWorkout(null);
+  };
+
+  const handleSettingsClick = () => {
+    // TODO: Implement settings navigation
+    console.log('Settings clicked');
+  };
+
+  const userName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'there' : 'there';
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
-                <Dumbbell className="h-6 w-6 text-white" />
-              </div>
-              <h1 className="text-2xl font-bold text-gray-900">FitTrack</h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <button className="p-2 text-gray-600 hover:text-gray-800 transition-colors">
-                <Settings className="h-5 w-5" />
-              </button>
-              <button 
-                onClick={logout}
-                className="text-red-600 hover:text-red-700 transition-colors"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <AppHeader 
+        userName={userName}
+        onLogout={logout} 
+        onSettingsClick={handleSettingsClick}
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back, {user?.firstName! + " " + user?.lastName!}! 👋
-          </h2>
-          <p className="text-gray-600">
-            Ready to crush your fitness goals today?
-          </p>
+        <WelcomeSection 
+          userName={userName}
+          subtitle="Let's crush your fitness goals today! 💪" 
+        />
+
+        <StatsSection stats={stats} className="mb-8" />
+        
+        <WorkoutSection
+          title="Today's Workouts"
+          subtitle="Your personalized workout recommendations"
+          workouts={workouts}
+          onWorkoutClick={handleWorkoutClick}
+          className="mb-8"
+        />
+
+        <div className="mt-12">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">Your AI-Generated Workout Plan</h3>
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <WorkoutPlanViewer plan={workoutPlanMock} />
+          </div>
         </div>
 
-        {/* LLM Workout Plan Section */}
         <div className="mb-10">
           <h3 className="text-2xl font-semibold text-blue-900 mb-4">Today's LLM Workout Plan</h3>
           <WorkoutPlanViewer plan={workoutPlanMock} />
         </div>
 
-        {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {stats.map((stat, index) => (
             <div key={index} className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md transition-shadow">
@@ -245,9 +257,19 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+        
+        {selectedWorkout && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <WorkoutPlanViewer 
+              plan={workoutPlanMock} 
+              onClose={handleCloseWorkoutViewer} 
+            />
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
+// Export the component as default
 export default Dashboard;
