@@ -1,6 +1,8 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Dumbbell, Target, Trophy, Calendar, TrendingUp, User, Settings, Play, Clock, Siren as Fire, Award } from 'lucide-react';
+import WorkoutPlanViewer from './WorkoutPlanViewer';
+import workoutPlanMock from './WorkoutPlanMock';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -96,6 +98,12 @@ const Dashboard = () => {
           <p className="text-gray-600">
             Ready to crush your fitness goals today?
           </p>
+        </div>
+
+        {/* LLM Workout Plan Section */}
+        <div className="mb-10">
+          <h3 className="text-2xl font-semibold text-blue-900 mb-4">Today's LLM Workout Plan</h3>
+          <WorkoutPlanViewer plan={workoutPlanMock} />
         </div>
 
         {/* Stats Grid */}
