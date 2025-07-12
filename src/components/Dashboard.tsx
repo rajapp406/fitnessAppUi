@@ -91,7 +91,7 @@ const Dashboard = () => {
         {/* Welcome Section */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back, {user?.name}! 👋
+            Welcome back, {user?.firstName! + " " + user?.lastName!}! 👋
           </h2>
           <p className="text-gray-600">
             Ready to crush your fitness goals today?

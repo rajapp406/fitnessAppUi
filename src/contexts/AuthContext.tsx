@@ -2,28 +2,33 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import tokenStore, { localStorageTokenStorage } from '../lib/tokenStore';
 import ApiService from '../services/apiService';
 
+interface UserProfile {
+  userId: string;
+  age: number;
+  gender: string;
+  fitnessLevel: string;
+  goals: string[];
+  workoutFrequency: string;
+  preferredWorkouts: string[];
+  hasCompletedOnboarding?: boolean;
+}
+
 interface User {
   id: string;
   email: string;
-  name: string;
-  hasCompletedOnboarding: boolean;
-  profile?: {
-    userId?: string;
-    age?: number;
-    gender?: string;
-    fitnessLevel?: string;
-    goals?: string[];
-    workoutFrequency?: string;
-    preferredWorkouts?: string[];
-  };
+  firstName: string;
+  lastName: string;
+  isActive: boolean;
+  profile?: UserProfile;
 }
 
 interface AuthContextType {
   user: User | null;
+  isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, name: string, password: string) => Promise<void>;
   logout: () => void;
-  updateProfile: (profile: Partial<User['profile']>) => void;
+  updateProfile: (profile: Partial<UserProfile>) => void;
   completeOnboarding: () => void;
 }
 
@@ -91,17 +96,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Call the real /auth/login endpoint
     const response = await ApiService.login({ email, password });
     if (response.success && response.data) {
-
-      const { id, accessToken, refreshToken, firstName, lastName } = response.data as any;
-      console.log(response.data, 'response.data')
-      console.log(accessToken, refreshToken, 'tokens')
+      const { id, accessToken, refreshToken, firstName, lastName, profile } = response.data as any;
+      
       // Map backend IUser to local User type
-      const localUser = {
+      const localUser: User = {
         id,
         email,
-        name: [firstName, lastName].filter(Boolean).join(' '),
-        hasCompletedOnboarding: false,
+        firstName: firstName || '',
+        lastName: lastName || '',
+        isActive: true,
+        profile: profile ? {
+          userId: id,
+          age: profile.age || 0,
+          gender: profile.gender || '',
+          fitnessLevel: profile.fitnessLevel || '',
+          goals: profile.goals || [],
+          workoutFrequency: profile.workoutFrequency || '',
+          preferredWorkouts: profile.preferredWorkouts || [],
+          hasCompletedOnboarding: profile.hasCompletedOnboarding || false,
+        } : undefined
       };
+      
       setUser(localUser);
       localStorage.setItem('user', JSON.stringify(localUser));
       tokenStore.setAccessToken(accessToken);
@@ -115,18 +130,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Split name into firstName and lastName for backend
     const [firstName, ...lastNameArr] = name.split(' ');
     const lastName = lastNameArr.join(' ');
+    
     // Call the real /auth/register endpoint
     const response = await ApiService.register({ email, password, firstName, lastName });
     if (response.success && response.data) {
-      console.log(response.data, 'response.data')
       const { id, accessToken, refreshToken, firstName, lastName } = response.data as any;
+      
       // Map backend IUser to local User type
-      const localUser = {
+      const localUser: User = {
         id,
         email,
-        name: [firstName, lastName].filter(Boolean).join(' '),
-        hasCompletedOnboarding: false,
+        firstName: firstName || '',
+        lastName: lastName || '',
+        isActive: true,
+        profile: {
+          userId: id,
+          age: 0,
+          gender: '',
+          fitnessLevel: '',
+          goals: [],
+          workoutFrequency: '',
+          preferredWorkouts: [],
+          hasCompletedOnboarding: false,
+        }
       };
+      
       setUser(localUser);
       localStorage.setItem('user', JSON.stringify(localUser));
       tokenStore.setAccessToken(accessToken);
@@ -143,34 +171,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     tokenStore.clear();
   };
 
-  const updateProfile = (profile: Partial<User['profile']>) => {
+  const updateProfile = (profile: Partial<UserProfile>) => {
     if (user) {
-      setUser((user: any)=>{
-        return {
-          ...user,
-          profile: { ...user.profile, ...profile }
-        };
-      });
-      console.log(user, 'updateProfile')
-      localStorage.setItem('user', JSON.stringify(user));
+      const updatedUser: User = {
+        ...user,
+        profile: user.profile ? { ...user.profile, ...profile } : {
+          userId: user.id,
+          age: 0,
+          gender: '',
+          fitnessLevel: '',
+          goals: [],
+          workoutFrequency: '',
+          preferredWorkouts: [],
+          ...profile
+        }
+      };
+      
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
     }
   };
 
   const completeOnboarding = () => {
     if (user) {
-      console.log(user, 'completeOnboarding')
-      const updatedUser = {
+      const updatedUser: User = {
         ...user,
-        hasCompletedOnboarding: true
+        profile: user.profile ? {
+          ...user.profile,
+          hasCompletedOnboarding: true
+        } : {
+          userId: user.id,
+          age: 0,
+          gender: '',
+          fitnessLevel: '',
+          goals: [],
+          workoutFrequency: '',
+          preferredWorkouts: [],
+          hasCompletedOnboarding: true
+        }
       };
-     // setUser(updatedUser);
-      //localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
     }
   };
+
+  // Derive isAuthenticated from the presence of a user
+  const isAuthenticated = !!user;
 
   return (
     <AuthContext.Provider value={{
       user,
+      isAuthenticated,
       login,
       register,
       logout,

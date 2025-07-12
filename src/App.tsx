@@ -1,9 +1,9 @@
-import React from 'react';
-import { createBrowserRouter, RouterProvider, Outlet } from 'react-router';
+import React, { useEffect } from 'react';
+import { createBrowserRouter, RouterProvider, Outlet, useNavigate, useLocation } from 'react-router';
 import { Provider } from 'react-redux';
 import { store } from './store';
 import { QueryProvider } from './providers/QueryProvider';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Landing from './components/Landing';
 import Login from './components/Login';
 import Register from './components/Register';
@@ -14,6 +14,25 @@ import ErrorBoundary from './components/ErrorBoundary';
 
 // Layout component for protected routes
 function ProtectedLayout() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    // Only run this check if user is authenticated
+    if (isAuthenticated && location.pathname === '/app/onboarding') {
+      try {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        // If user has completed onboarding, redirect to dashboard
+        if (user?.profile) {
+          navigate('/app/dashboard', { replace: true });
+        }
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
+    }
+  }, [isAuthenticated, location.pathname, navigate]);
+
   return (
     <ProtectedRoute>
       <Outlet />
