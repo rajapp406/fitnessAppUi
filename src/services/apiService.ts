@@ -55,8 +55,8 @@ class ApiService {
 
   static async updateProfile(profileData: any) {
     return apiRequest<{ user: IUser }>({
-      method: 'PATCH',
-      url: '/users/me',
+      method: 'POST',
+      url: '/client/users/profile',
       data: profileData,
     });
   }

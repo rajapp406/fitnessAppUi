@@ -130,7 +130,7 @@ export const apiRequest = async <T>(
     const response = await apiClient.request<ApiResponse<T>>(config);
     return {
       success: true,
-      data: response.data,
+      data: (response as any).data,
     };
   } catch (error) {
     if (axios.isAxiosError(error) && error.response) {

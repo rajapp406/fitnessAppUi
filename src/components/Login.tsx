@@ -5,8 +5,8 @@ import { Dumbbell, Eye, EyeOff, Mail, Lock, ArrowLeft } from 'lucide-react';
 import SocialLogin from './SocialLogin';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('user10@example.com');
+  const [password, setPassword] = useState('securepassword123');
   const [showPassword, setShowPassword] = useState(false);
   
   const navigate = useNavigate();
@@ -20,7 +20,13 @@ const Login = () => {
     setIsLoading(true);
     try {
       await login(email, password);
-      navigate('/app/onboarding');
+      const user = JSON.parse(localStorage.getItem('user') as any| '{}');
+      console.log(user, 'user');
+      if(user.profile?.hasCompletedOnboarding){
+        navigate('/app/dashboard');
+      }else{
+        navigate('/app/onboarding');
+      }
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'message' in err) {
         setError((err as { message?: string }).message || 'Login failed');

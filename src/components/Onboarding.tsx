@@ -28,7 +28,6 @@ const Onboarding = () => {
   
   const { updateProfile, completeOnboarding } = useAuth();
   const navigate = useNavigate();
-
   const steps = [
     {
       title: 'Personal Information',
@@ -60,14 +59,23 @@ const Onboarding = () => {
         setIsSubmitting(true);
         // Update local state first for immediate feedback
         console.log(formData, 'formData', JSON.stringify(formData))
-        updateProfile(formData);
-        
+        const user = JSON.parse(localStorage.getItem('user') as any| '{}');
+        console.log(user, user.id)
+        const ProfileData = {userId: user.id, ...formData};
+        updateProfile(ProfileData);
+        const updatedUser = {
+          ...user,
+          profile: { ...user.profile, ...ProfileData }
+        };
+      
         // Send data to the backend
-        await ApiService.updateProfile({
-          ...formData,
+        const profile = await ApiService.updateProfile({
+          ...ProfileData,
           hasCompletedOnboarding: true
         });
-        
+        console.log(profile.data, 'profile');
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+     
         // Mark onboarding as complete
         completeOnboarding();
         
@@ -189,6 +197,7 @@ type StepProps = {
 };
 
 function PersonalInfo({ formData, setFormData }: StepProps) {
+
   return (
     <div className="space-y-6">
       <div>

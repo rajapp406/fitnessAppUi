@@ -8,6 +8,7 @@ interface User {
   name: string;
   hasCompletedOnboarding: boolean;
   profile?: {
+    userId?: string;
     age?: number;
     gender?: string;
     fitnessLevel?: string;
@@ -144,23 +145,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateProfile = (profile: Partial<User['profile']>) => {
     if (user) {
-      const updatedUser = {
-        ...user,
-        profile: { ...user.profile, ...profile }
-      };
-      setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      setUser((user: any)=>{
+        return {
+          ...user,
+          profile: { ...user.profile, ...profile }
+        };
+      });
+      console.log(user, 'updateProfile')
+      localStorage.setItem('user', JSON.stringify(user));
     }
   };
 
   const completeOnboarding = () => {
     if (user) {
+      console.log(user, 'completeOnboarding')
       const updatedUser = {
         ...user,
         hasCompletedOnboarding: true
       };
-      setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+     // setUser(updatedUser);
+      //localStorage.setItem('user', JSON.stringify(updatedUser));
     }
   };
 

@@ -112,4 +112,4 @@ export const localStorageTokenStorage = new LocalStorageTokenStorage();
 export const sessionStorageTokenStorage = new SessionStorageTokenStorage();
 
 const tokenStore = new TokenStore(memoryTokenStorage);
-export default tokenStore; 
+export default tokenStore;
