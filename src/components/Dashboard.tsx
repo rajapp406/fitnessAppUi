@@ -114,11 +114,6 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="mb-10">
-          <h3 className="text-2xl font-semibold text-blue-900 mb-4">Today's LLM Workout Plan</h3>
-          <WorkoutPlanViewer plan={workoutPlanMock} />
-        </div>
-
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {stats.map((stat, index) => (
             <div key={index} className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md transition-shadow">
