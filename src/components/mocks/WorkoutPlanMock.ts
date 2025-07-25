@@ -1,3 +1,7 @@
+import { Award, Clock, Dumbbell, Flame } from "lucide-react";
+import type { StatItem, Workout, WorkoutPlan } from '../../types';
+
+
 // Mock data for the LLM workout plan response
 const workoutPlanMock = {
   "user_id": "string",
@@ -111,3 +115,58 @@ const workoutPlanMock = {
   "youtube_status": "YouTube links processed successfully"
 }
 export default workoutPlanMock;
+
+export const stats: StatItem[] = [
+    {
+      title: 'Workouts This Week',
+      value: '4',
+      icon: Dumbbell,
+      color: 'from-blue-600 to-blue-700',
+      bgColor: 'from-blue-50 to-blue-100'
+    },
+    {
+      title: 'Calories Burned',
+      value: '1,240',
+      icon: Flame,
+      color: 'from-orange-600 to-orange-700',
+      bgColor: 'from-orange-50 to-orange-100'
+    },
+    {
+      title: 'Active Minutes',
+      value: '180',
+      icon: Clock,
+      color: 'from-green-600 to-green-700',
+      bgColor: 'from-green-50 to-green-100'
+    },
+    {
+      title: 'Achievements',
+      value: '12',
+      icon: Award,
+      color: 'from-purple-600 to-purple-700',
+      bgColor: 'from-purple-50 to-purple-100'
+    }
+  ];
+
+  export const workouts: Workout[] = [
+    {
+      title: 'Morning Cardio',
+      duration: '30 min',
+      type: 'Cardio',
+      difficulty: 'Beginner',
+      image: 'https://images.pexels.com/photos/416778/pexels-photo-416778.jpeg?auto=compress&cs=tinysrgb&w=400'
+    },
+    {
+      title: 'Strength Training',
+      duration: '45 min',
+      type: 'Strength',
+      difficulty: 'Intermediate',
+      image: 'https://images.pexels.com/photos/1229356/pexels-photo-1229356.jpeg?auto=compress&cs=tinysrgb&w=400'
+    },
+    {
+      title: 'Yoga Flow',
+      duration: '25 min',
+      type: 'Flexibility',
+      difficulty: 'Beginner',
+      image: 'https://images.pexels.com/photos/3822187/pexels-photo-3822187.jpeg?auto=compress&cs=tinysrgb&w=400'
+    }
+  ];

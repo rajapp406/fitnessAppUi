@@ -1,72 +1,21 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Dumbbell, Clock, Award, Flame, Play, Target, Calendar } from 'lucide-react';
+import { Clock, Play, Target, Calendar, Box } from 'lucide-react';
 import WorkoutPlanViewer from './workout/WorkoutPlanViewer';
-import workoutPlanMock from './WorkoutPlanMock';
+import workoutPlanMock, { stats, workouts } from './mocks/WorkoutPlanMock';
 import AppHeader from './dashboard/AppHeader';
 import WelcomeSection from './dashboard/WelcomeSection';
 import StatsSection from './dashboard/StatsSection';
 import WorkoutSection from './dashboard/WorkoutSection';
-import type { StatItem, Workout } from '../types';
+import workoutService from '../services/workoutService';
+import { Workout, WorkoutPlan } from '../types';
 
 const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const [selectedWorkout, setSelectedWorkout] = useState<Workout | null>(null);
+  const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | any>(null);
 
-  const stats: StatItem[] = [
-    {
-      title: 'Workouts This Week',
-      value: '4',
-      icon: Dumbbell,
-      color: 'from-blue-600 to-blue-700',
-      bgColor: 'from-blue-50 to-blue-100'
-    },
-    {
-      title: 'Calories Burned',
-      value: '1,240',
-      icon: Flame,
-      color: 'from-orange-600 to-orange-700',
-      bgColor: 'from-orange-50 to-orange-100'
-    },
-    {
-      title: 'Active Minutes',
-      value: '180',
-      icon: Clock,
-      color: 'from-green-600 to-green-700',
-      bgColor: 'from-green-50 to-green-100'
-    },
-    {
-      title: 'Achievements',
-      value: '12',
-      icon: Award,
-      color: 'from-purple-600 to-purple-700',
-      bgColor: 'from-purple-50 to-purple-100'
-    }
-  ];
-
-  const workouts: Workout[] = [
-    {
-      title: 'Morning Cardio',
-      duration: '30 min',
-      type: 'Cardio',
-      difficulty: 'Beginner',
-      image: 'https://images.pexels.com/photos/416778/pexels-photo-416778.jpeg?auto=compress&cs=tinysrgb&w=400'
-    },
-    {
-      title: 'Strength Training',
-      duration: '45 min',
-      type: 'Strength',
-      difficulty: 'Intermediate',
-      image: 'https://images.pexels.com/photos/1229356/pexels-photo-1229356.jpeg?auto=compress&cs=tinysrgb&w=400'
-    },
-    {
-      title: 'Yoga Flow',
-      duration: '25 min',
-      type: 'Flexibility',
-      difficulty: 'Beginner',
-      image: 'https://images.pexels.com/photos/3822187/pexels-photo-3822187.jpeg?auto=compress&cs=tinysrgb&w=400'
-    }
-  ];
+  
 
   const handleWorkoutClick = (workout: Workout) => {
     setSelectedWorkout(workout);
@@ -80,8 +29,19 @@ const Dashboard: React.FC = () => {
     // TODO: Implement settings navigation
     console.log('Settings clicked');
   };
+  useEffect(() => {
+    const request = {
+      user_id: 'user123',
+      fitness_level: 'intermediate',
+      goal: 'Muscle building',
+      day: 2
+    };  
+    workoutService.getLanggraphWorkout(request).then((response) => {
+      setWorkoutPlan(response);
+    });
+  }, []);
 
-  const userName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'there' : 'there';
+const userName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'there' : 'there';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -110,24 +70,14 @@ const Dashboard: React.FC = () => {
         <div className="mt-12">
           <h3 className="text-xl font-bold text-gray-900 mb-4">Your AI-Generated Workout Plan</h3>
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <WorkoutPlanViewer plan={workoutPlanMock} />
+          { workoutPlan ? (
+            <WorkoutPlanViewer 
+              plan={workoutPlan} 
+            />
+          ) : (
+            <Box><h1>Loading....</h1></Box>
+          )}
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => (
-            <div key={index} className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
-                </div>
-                <div className={`bg-gradient-to-r ${stat.bgColor} p-3 rounded-xl`}>
-                  <stat.icon className={`h-6 w-6 bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`} />
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -252,15 +202,6 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
-        
-        {selectedWorkout && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <WorkoutPlanViewer 
-              plan={workoutPlanMock} 
-              onClose={handleCloseWorkoutViewer} 
-            />
-          </div>
-        )}
       </div>
     </div>
   );

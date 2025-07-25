@@ -78,60 +78,6 @@ interface WorkoutPlan {
   youtube_status: string;
 }
 
-// Styled components for better organization
-const VideoThumbnail = styled('div')(({ theme }) => ({
-  position: 'relative',
-  width: '100%',
-  paddingBottom: '56.25%', // 16:9 aspect ratio
-  borderRadius: theme.shape.borderRadius,
-  overflow: 'hidden',
-  cursor: 'pointer',
-  backgroundColor: theme.palette.grey[200],
-  '&:hover': {
-    '& .play-button': {
-      transform: 'scale(1.1)',
-    },
-  },
-}));
-
-const PlayButton = styled('div')(({ theme }) => ({
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  width: 60,
-  height: 60,
-  borderRadius: '50%',
-  backgroundColor: 'rgba(0, 0, 0, 0.7)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  transition: 'transform 0.2s',
-  '& svg': {
-    color: 'white',
-    fontSize: 30,
-  },
-}));
-
-const StyledAccordion = styled(Accordion)(({ theme }) => ({
-  '&:before': { display: 'none' },
-  '&.Mui-expanded': {
-    margin: 0,
-  },
-  '& .MuiAccordionSummary-root': {
-    minHeight: 56,
-    '&.Mui-expanded': {
-      minHeight: 56,
-    },
-  },
-  '& .MuiAccordionSummary-content': {
-    margin: '12px 0',
-    '&.Mui-expanded': {
-      margin: '12px 0',
-    },
-  },
-}));
-
 interface Props {
   plan: WorkoutPlan;
   onClose?: () => void;
@@ -147,19 +93,37 @@ const SectionTitle: React.FC<{ title: string; icon: React.ReactNode }> = ({ titl
 );
 
 const WorkoutPlanViewer: React.FC<Props> = ({ plan, onClose }) => {
+  // All hooks must be called unconditionally at the top level
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [expanded, setExpanded] = useState<string | false>(false);
+  const [videoStates, setVideoStates] = useState<{[key: number]: boolean}>({});
+  
+  // Early return after all hooks have been called
+  if (!plan) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <Typography>No workout plan available</Typography>
+      </Box>
+    );
+  }
 
   const handleChange = (panel: string) => (_: React.SyntheticEvent, isExpanded: boolean) => {
     setExpanded(isExpanded ? panel : false);
   };
 
+  const toggleVideo = (index: number) => {
+    setVideoStates(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
+
   const renderExerciseCard = (exercise: Exercise, index: number) => {
-    const [showVideo, setShowVideo] = React.useState(false);
+    const showVideo = videoStates[index] || false;
     
     return (
-      <Card key={index} sx={{ mb: 2, borderRadius: 2, boxShadow: 1 }}>
+      <Card key={index} sx={{ mb: 2, borderRadius: 2, boxShadow: 1, width: '100%' }}>
         <CardContent sx={{ '&:last-child': { pb: 2 } }}>
           <Box display="flex" justifyContent="space-between" alignItems="flex-start">
             <Box flex={1}>
@@ -170,7 +134,7 @@ const WorkoutPlanViewer: React.FC<Props> = ({ plan, onClose }) => {
                     size="small" 
                     onClick={(e) => {
                       e.stopPropagation();
-                      setShowVideo(!showVideo);
+                      toggleVideo(index);
                     }}
                     sx={{ ml: 'auto' }}
                   >
@@ -339,7 +303,7 @@ const WorkoutPlanViewer: React.FC<Props> = ({ plan, onClose }) => {
   );
 
   return (
-    <Box maxWidth={700} mx="auto" my={2} px={isMobile ? 1 : 4} position="relative">
+    <Box maxWidth={'100%'} mx="auto" my={2} px={isMobile ? 1 : 4} position="relative">
       {onClose && (
         <IconButton 
           onClick={onClose}

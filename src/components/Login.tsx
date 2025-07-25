@@ -19,6 +19,7 @@ const Login = () => {
     setError(null);
     setIsLoading(true);
     try {
+      console.log(email, password, '-----');
       await login(email, password);
       const user = JSON.parse(localStorage.getItem('user') as any| '{}');
       console.log(user, 'user');

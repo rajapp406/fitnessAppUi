@@ -54,6 +54,13 @@ const SectionTitle: React.FC<{ title: string; icon: React.ReactNode }> = ({ titl
 );
 
 const WorkoutPlanViewer: React.FC<Props> = ({ plan, onClose }) => {
+  if (!plan) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight={200}>
+        <Typography>No workout plan available</Typography>
+      </Box>
+    );
+  }
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [expanded, setExpanded] = useState<string | false>(false);
